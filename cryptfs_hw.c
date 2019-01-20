@@ -80,18 +80,18 @@ static int (*qseecom_wipe_key)(int);
 #define CRYPTFS_HW_ALGO_MODE_AES_XTS 			0x3
 
 enum cryptfs_hw_key_management_usage_type {
-	CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION		= 0x01,
-	CRYPTFS_HW_KM_USAGE_FILE_ENCRYPTION		= 0x02,
-	CRYPTFS_HW_KM_USAGE_UFS_ICE_DISK_ENCRYPTION	= 0x03,
-	CRYPTFS_HW_KM_USAGE_SDCC_ICE_DISK_ENCRYPTION	= 0x04,
-	CRYPTFS_HW_KM_USAGE_MAX
+    CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION		= 0x01,
+    CRYPTFS_HW_KM_USAGE_FILE_ENCRYPTION		= 0x02,
+    CRYPTFS_HW_KM_USAGE_UFS_ICE_DISK_ENCRYPTION	= 0x03,
+    CRYPTFS_HW_KM_USAGE_SDCC_ICE_DISK_ENCRYPTION	= 0x04,
+    CRYPTFS_HW_KM_USAGE_MAX
 };
 
 static inline void* secure_memset(void* v, int c , size_t n)
 {
-	volatile unsigned char* p = (volatile unsigned char* )v;
-	while (n--) *p++ = c;
-	return v;
+    volatile unsigned char* p = (volatile unsigned char* )v;
+    while (n--) *p++ = c;
+    return v;
 }
 
 #ifdef LEGACY_HW_DISK_ENCRYPTION
@@ -159,187 +159,187 @@ static int load_qseecom_library()
 }
 
 static int cryptfs_hw_create_key(enum cryptfs_hw_key_management_usage_type usage,
-					unsigned char *hash32)
+                    unsigned char *hash32)
 {
-	if (load_qseecom_library())
-		return qseecom_create_key(usage, hash32);
+    if (load_qseecom_library())
+        return qseecom_create_key(usage, hash32);
 
-	return CRYPTFS_HW_CREATE_KEY_FAILED;
+    return CRYPTFS_HW_CREATE_KEY_FAILED;
 }
 
 static int cryptfs_hw_wipe_key(enum cryptfs_hw_key_management_usage_type usage)
 {
-	if (load_qseecom_library())
-		return qseecom_wipe_key(usage);
+    if (load_qseecom_library())
+        return qseecom_wipe_key(usage);
 
-	return CRYPTFS_HW_WIPE_KEY_FAILED;
+    return CRYPTFS_HW_WIPE_KEY_FAILED;
 }
 
 static int cryptfs_hw_update_key(enum cryptfs_hw_key_management_usage_type usage,
-			unsigned char *current_hash32, unsigned char *new_hash32)
+            unsigned char *current_hash32, unsigned char *new_hash32)
 {
-	if (load_qseecom_library())
-		return qseecom_update_key(usage, current_hash32, new_hash32);
+    if (load_qseecom_library())
+        return qseecom_update_key(usage, current_hash32, new_hash32);
 
-	return CRYPTFS_HW_UPDATE_KEY_FAILED;
+    return CRYPTFS_HW_UPDATE_KEY_FAILED;
 }
 #else
 static size_t memscpy(void *dst, size_t dst_size, const void *src, size_t src_size)
 {
-	size_t min_size = (dst_size < src_size) ? dst_size : src_size;
-	memcpy(dst, src, min_size);
-	return min_size;
+    size_t min_size = (dst_size < src_size) ? dst_size : src_size;
+    memcpy(dst, src, min_size);
+    return min_size;
 }
 
 static int cryptfs_hw_create_key(enum cryptfs_hw_key_management_usage_type usage,
-					unsigned char *hash32)
+                    unsigned char *hash32)
 {
-	struct qseecom_create_key_req req;
-	int qseecom_fd;
-	int32_t ret;
+    struct qseecom_create_key_req req;
+    int qseecom_fd;
+    int32_t ret;
 
-	if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
-		usage >= CRYPTFS_HW_KM_USAGE_MAX) {
-		SLOGE("Error:: unsupported usage %d\n", usage);
-		return CRYPTFS_HW_CREATE_KEY_FAILED;
-	}
+    if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
+        usage >= CRYPTFS_HW_KM_USAGE_MAX) {
+        SLOGE("Error:: unsupported usage %d\n", usage);
+        return CRYPTFS_HW_CREATE_KEY_FAILED;
+    }
 
-	qseecom_fd = open("/dev/qseecom", O_RDWR);
-	if (qseecom_fd < 0) {
-		SLOGE("Error::Failed to open /dev/qseecom device\n");
-		return CRYPTFS_HW_CREATE_KEY_FAILED;;
-	}
+    qseecom_fd = open("/dev/qseecom", O_RDWR);
+    if (qseecom_fd < 0) {
+        SLOGE("Error::Failed to open /dev/qseecom device\n");
+        return CRYPTFS_HW_CREATE_KEY_FAILED;;
+    }
 
-	if (!hash32) {
-		secure_memset((void *)req.hash32, 0, QSEECOM_HASH_SIZE);
-	} else {
-		memscpy((void *)req.hash32, QSEECOM_HASH_SIZE, (void *)hash32,
-			QSEECOM_HASH_SIZE);
-	}
+    if (!hash32) {
+        secure_memset((void *)req.hash32, 0, QSEECOM_HASH_SIZE);
+    } else {
+        memscpy((void *)req.hash32, QSEECOM_HASH_SIZE, (void *)hash32,
+            QSEECOM_HASH_SIZE);
+    }
 
-	req.usage = (enum qseecom_key_management_usage_type)usage;
-	ret = ioctl(qseecom_fd, QSEECOM_IOCTL_CREATE_KEY_REQ, &req);
-	if (ret) {
-		SLOGE("Error::ioctl call to create encryption key for usage %d failed with ret = %d, errno = %d\n",
-			usage, ret, errno);
-		if (errno == ERANGE)
-			ret = CRYPTFS_HW_KMS_MAX_FAILURE;
-		else
-			ret = CRYPTFS_HW_CREATE_KEY_FAILED;
-	} else {
-		SLOGE("SUCESS::ioctl call to create encryption key for usage %d success with ret = %d\n",
-			usage, ret);
-	}
-	close(qseecom_fd);
-	return ret;
+    req.usage = (enum qseecom_key_management_usage_type)usage;
+    ret = ioctl(qseecom_fd, QSEECOM_IOCTL_CREATE_KEY_REQ, &req);
+    if (ret) {
+        SLOGE("Error::ioctl call to create encryption key for usage %d failed with ret = %d, errno = %d\n",
+            usage, ret, errno);
+        if (errno == ERANGE)
+            ret = CRYPTFS_HW_KMS_MAX_FAILURE;
+        else
+            ret = CRYPTFS_HW_CREATE_KEY_FAILED;
+    } else {
+        SLOGE("SUCESS::ioctl call to create encryption key for usage %d success with ret = %d\n",
+            usage, ret);
+    }
+    close(qseecom_fd);
+    return ret;
 }
 
 static int __cryptfs_hw_wipe_clear_key(enum cryptfs_hw_key_management_usage_type usage, int wipe_key_flag)
 {
-	struct qseecom_wipe_key_req req;
-	int32_t ret;
-	int qseecom_fd;
+    struct qseecom_wipe_key_req req;
+    int32_t ret;
+    int qseecom_fd;
 
-	if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
-			usage >= CRYPTFS_HW_KM_USAGE_MAX) {
-		SLOGE("Error:: unsupported usage %d\n", usage);
-		return -1;
-	}
-	qseecom_fd = open("/dev/qseecom", O_RDWR);
-	if (qseecom_fd < 0) {
-		SLOGE("Error::Failed to open /dev/qseecom device\n");
-		return -1;
-	}
+    if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
+            usage >= CRYPTFS_HW_KM_USAGE_MAX) {
+        SLOGE("Error:: unsupported usage %d\n", usage);
+        return -1;
+    }
+    qseecom_fd = open("/dev/qseecom", O_RDWR);
+    if (qseecom_fd < 0) {
+        SLOGE("Error::Failed to open /dev/qseecom device\n");
+        return -1;
+    }
 
-	req.usage = (enum qseecom_key_management_usage_type)usage;
-	req.wipe_key_flag = wipe_key_flag;
-	ret = ioctl(qseecom_fd, QSEECOM_IOCTL_WIPE_KEY_REQ, &req);
-	close(qseecom_fd);
-	return ret;
+    req.usage = (enum qseecom_key_management_usage_type)usage;
+    req.wipe_key_flag = wipe_key_flag;
+    ret = ioctl(qseecom_fd, QSEECOM_IOCTL_WIPE_KEY_REQ, &req);
+    close(qseecom_fd);
+    return ret;
 }
 
 static int cryptfs_hw_wipe_key(enum cryptfs_hw_key_management_usage_type usage)
 {
-	int32_t ret;
+    int32_t ret;
 
-	ret = __cryptfs_hw_wipe_clear_key(usage, CRYPTFS_HW_KMS_WIPE_KEY);
-	if (ret) {
-		SLOGE("Error::ioctl call to wipe the encryption key for usage %d failed with ret = %d, errno = %d\n",
-			usage, ret, errno);
-		ret = CRYPTFS_HW_WIPE_KEY_FAILED;
-	} else {
-		SLOGE("SUCCESS::ioctl call to wipe the encryption key for usage %d success with ret = %d\n",
-			usage, ret);
-	}
-	return ret;
+    ret = __cryptfs_hw_wipe_clear_key(usage, CRYPTFS_HW_KMS_WIPE_KEY);
+    if (ret) {
+        SLOGE("Error::ioctl call to wipe the encryption key for usage %d failed with ret = %d, errno = %d\n",
+            usage, ret, errno);
+        ret = CRYPTFS_HW_WIPE_KEY_FAILED;
+    } else {
+        SLOGE("SUCCESS::ioctl call to wipe the encryption key for usage %d success with ret = %d\n",
+            usage, ret);
+    }
+    return ret;
 }
 
 #ifdef QSEECOM_IOCTL_SET_ICE_INFO
 int set_ice_param(int flag)
 {
-	int  qseecom_fd, ret = -1;
-	struct qseecom_ice_data_t ice_data;
-	qseecom_fd = open("/dev/qseecom", O_RDWR);
-	if (qseecom_fd < 0)
-		return ret;
-	ice_data.flag = flag;
-	ret = ioctl(qseecom_fd, QSEECOM_IOCTL_SET_ICE_INFO, &ice_data);
-	close(qseecom_fd);
-	return ret;
+    int  qseecom_fd, ret = -1;
+    struct qseecom_ice_data_t ice_data;
+    qseecom_fd = open("/dev/qseecom", O_RDWR);
+    if (qseecom_fd < 0)
+        return ret;
+    ice_data.flag = flag;
+    ret = ioctl(qseecom_fd, QSEECOM_IOCTL_SET_ICE_INFO, &ice_data);
+    close(qseecom_fd);
+    return ret;
 }
 #else
 int set_ice_param(__unused int flag)
 {
-	return -1;
+    return -1;
 }
 #endif
 
 static int cryptfs_hw_update_key(enum cryptfs_hw_key_management_usage_type usage,
-			unsigned char *current_hash32, unsigned char *new_hash32)
+            unsigned char *current_hash32, unsigned char *new_hash32)
 {
-	struct qseecom_update_key_userinfo_req req;
-	int qseecom_fd;
-	int32_t ret;
+    struct qseecom_update_key_userinfo_req req;
+    int qseecom_fd;
+    int32_t ret;
 
-	if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
-			usage >= CRYPTFS_HW_KM_USAGE_MAX) {
-		SLOGE("Error:: unsupported usage %d\n", usage);
-		return CRYPTFS_HW_UPDATE_KEY_FAILED;
-	}
-	qseecom_fd = open("/dev/qseecom", O_RDWR);
-	if (qseecom_fd < 0) {
-		SLOGE("Error::Failed to open /dev/qseecom device\n");
-		return CRYPTFS_HW_UPDATE_KEY_FAILED;
-	}
+    if (usage < CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION ||
+            usage >= CRYPTFS_HW_KM_USAGE_MAX) {
+        SLOGE("Error:: unsupported usage %d\n", usage);
+        return CRYPTFS_HW_UPDATE_KEY_FAILED;
+    }
+    qseecom_fd = open("/dev/qseecom", O_RDWR);
+    if (qseecom_fd < 0) {
+        SLOGE("Error::Failed to open /dev/qseecom device\n");
+        return CRYPTFS_HW_UPDATE_KEY_FAILED;
+    }
 
-	req.usage = (enum qseecom_key_management_usage_type)usage;
-	if (!current_hash32) {
-		secure_memset((void *)req.current_hash32, 0, QSEECOM_HASH_SIZE);
-	} else {
-		memscpy((void *)req.current_hash32, QSEECOM_HASH_SIZE, (void *)current_hash32,
-			QSEECOM_HASH_SIZE);
-	}
-	if (!new_hash32) {
-		secure_memset((void *)req.new_hash32, 0, QSEECOM_HASH_SIZE);
-	} else {
-		memscpy((void *)req.new_hash32, QSEECOM_HASH_SIZE, (void *)new_hash32,
-		QSEECOM_HASH_SIZE);
-	}
+    req.usage = (enum qseecom_key_management_usage_type)usage;
+    if (!current_hash32) {
+        secure_memset((void *)req.current_hash32, 0, QSEECOM_HASH_SIZE);
+    } else {
+        memscpy((void *)req.current_hash32, QSEECOM_HASH_SIZE, (void *)current_hash32,
+            QSEECOM_HASH_SIZE);
+    }
+    if (!new_hash32) {
+        secure_memset((void *)req.new_hash32, 0, QSEECOM_HASH_SIZE);
+    } else {
+        memscpy((void *)req.new_hash32, QSEECOM_HASH_SIZE, (void *)new_hash32,
+        QSEECOM_HASH_SIZE);
+    }
 
-	ret = ioctl(qseecom_fd, QSEECOM_IOCTL_UPDATE_KEY_USER_INFO_REQ, &req);
-	if (ret) {
-		SLOGE("Error::ioctl call to update the encryption key for usage %d failed with ret = %d, errno = %d\n",
-			usage, ret, errno);
-		if (errno == ERANGE)
-			ret = CRYPTFS_HW_KMS_MAX_FAILURE;
-		else
-			ret = CRYPTFS_HW_UPDATE_KEY_FAILED;
-	} else {
-		SLOGE("SUCCESS::ioctl call to update the encryption key for usage %d success with ret = %d\n",
-			usage, ret);
-	}
-	close(qseecom_fd);
-	return ret;
+    ret = ioctl(qseecom_fd, QSEECOM_IOCTL_UPDATE_KEY_USER_INFO_REQ, &req);
+    if (ret) {
+        SLOGE("Error::ioctl call to update the encryption key for usage %d failed with ret = %d, errno = %d\n",
+            usage, ret, errno);
+        if (errno == ERANGE)
+            ret = CRYPTFS_HW_KMS_MAX_FAILURE;
+        else
+            ret = CRYPTFS_HW_UPDATE_KEY_FAILED;
+    } else {
+        SLOGE("SUCCESS::ioctl call to update the encryption key for usage %d success with ret = %d\n",
+            usage, ret);
+    }
+    close(qseecom_fd);
+    return ret;
 }
 #endif
 
@@ -450,7 +450,7 @@ int is_ice_enabled(void)
 
 int clear_hw_device_encryption_key()
 {
-	return cryptfs_hw_wipe_key(map_usage(CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION));
+    return cryptfs_hw_wipe_key(map_usage(CRYPTFS_HW_KM_USAGE_DISK_ENCRYPTION));
 }
 
 #ifdef LEGACY_HW_DISK_ENCRYPTION
